@@ -1,13 +1,22 @@
 from environments.base import RL_ENV
+import numpy as np
 
 class RL_Agent:
-    def __init__(self, env:RL_ENV, init_state, eta=0.1):
+    def __init__(self, env:RL_ENV, init_state=None, eta=0.1):
         self.env = env
         self.num_states = len(env.S)
         self.num_actions = len(env.A)
         self.eta = eta  # Learning rate
-        self.init_state = init_state
+        self.state = init_state
+        if init_state is None:
+            self.state = np.random.randint(self.num_states)
 
+    def step(self):
+        action = self.choose_action(self.state)
+        next_state, reward, done = self.env.step(self.env.S[self.state], self.env.A[action])
+        print(f'Agent at state {self.env.S[self.state]} took action {self.env.A[action]} transition to state {next_state} collecting reward {reward} and is it done? {done}')
+        self.state = self.env.state2idx(next_state)
+        
     def choose_action(self, state_idx)->int:
         raise NotImplementedError
     
@@ -29,16 +38,16 @@ class RL_Agent:
     def store_state(self, state_idx):
         return None
 
-    def train(self, init_state = None, episodes=1000, record_policy = False, r_thresh=-300):
+    def train(self, episodes=1000, record_policy = False, evaluate_policy = False ,max_traj = 10):
         episode_rewards = []
         policy_history = []
-        if init_state is not None:
-            self.init_state = init_state
+        policy_eval = []
         for _ in range(0, episodes):
+            state_idx = np.random.randint(self.num_states)
             cum_reward = 0
-            state_idx = self.env.state2idx(self.init_state)
             done = False
-            while (not done) and cum_reward > r_thresh:
+            traj = 0
+            while (not done) and traj < max_traj:
                 self.store_state(state_idx)
                 action_idx = self.choose_action(state_idx)
                 new_state, reward, done = self.env.step(self.env.S[state_idx], self.env.A[action_idx])
@@ -46,6 +55,8 @@ class RL_Agent:
                 self.update_weights(state_idx, action_idx, new_state, reward, done)
                 state_idx = new_state
                 cum_reward += reward
+                traj += 1
             if record_policy : policy_history.append(list(self.opt_policy().values()))
-            episode_rewards.append(reward)
-        return episode_rewards, policy_history
+            if evaluate_policy : policy_eval.append(self.env.evaluate_policy(self)[0])
+            episode_rewards.append(cum_reward)
+        return episode_rewards, policy_history, policy_eval

@@ -3,6 +3,7 @@ class RL_ENV:
         self.S = state_space
         self.A = action_space
         self.T = set() if terminal_states is None else terminal_states
+        self.IAS = self.T #inactive states
     
     def state2idx(self, state)->int:
         raise NotImplementedError
@@ -17,6 +18,8 @@ class RL_ENV:
         raise NotImplementedError
     
     def step(self, state, action):
+        if state in self.T:
+            return state, 0, True
         next_state = self.transition_state(state, action)
         reward = self.reward(state, action, next_state)
         done = next_state in self.T
@@ -29,6 +32,8 @@ class RL_ENV:
         report = {}
         ts = 0
         for s in self.S:
+            if s in self.IAS:
+                continue
             done = False
             x = s
             score = 0

@@ -3,7 +3,7 @@ import random
 import numpy as np
 
 class QLearningAgent(RL_Agent):
-    def __init__(self, env, init_state, alpha=0.1, gamma=0.9, epsilon=0.1):
+    def __init__(self, env, init_state=None, alpha=0.1, gamma=0.9, epsilon=0.1):
         super().__init__(env, init_state, eta=alpha)
         self.gamma = gamma  # Discount factor
         self.epsilon = epsilon  # Exploration rate

@@ -2,7 +2,7 @@ import numpy as np
 from .base import RL_Agent, RL_ENV
 
 class MWUAgentBruteFroce(RL_Agent):
-    def __init__(self, env:RL_ENV, init_state, update_step = 1, eta=0.1):
+    def __init__(self, env:RL_ENV, init_state=None, update_step = 1, eta=0.1):
         super().__init__(env, init_state, eta)
         self.update_step = update_step
         self.policies = np.indices(
