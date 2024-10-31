@@ -7,7 +7,7 @@ class LinearWorldEnv(RL_ENV):
         super().__init__(
             np.arange(1, grid_size + 1, 1),
             [-1, 1],
-            {1, goal_state, grid_size}
+            {goal_state}
         )
         self.grid_size = grid_size
         self.goal_state = goal_state
@@ -49,7 +49,7 @@ class LinearWorldEnv(RL_ENV):
             if agent_state and state == agent_state:
                 ax.text(state, 0.5, 'A', va='center', ha='center', fontsize=12, color='blue')  # Agent
 
-            if policy:
+            if policy and state not in self.T:
                 ax.arrow(state, 0.5, 0.4 * policy.get(state), 0, head_width=0.2, head_length=0.2, fc='black', ec='black')
 
         ax.set_xlim([0.5, self.grid_size + 0.5])

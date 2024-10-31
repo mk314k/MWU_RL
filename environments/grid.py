@@ -6,13 +6,14 @@ class GridWorldEnv(RL_ENV):
     def __init__(self, grid_size=(5, 5), goal_state=(4, 4), walls=None, damps=None):
         super().__init__(
             [(x, y) for x in range(grid_size[0]) for y in range(grid_size[1])],
-            ['up', 'down', 'left', 'right']
+            ['up', 'down', 'left', 'right'],
+            {goal_state}
         )
         self.grid_size = grid_size
-        self.goal_state = {goal_state}
+        # self.goal_state = {goal_state}
         self.walls = walls if walls else set()
         self.damps = damps if damps else set()
-        self.T = self.goal_state.union(self.walls)
+        self.IAS = self.T.union(self.walls)
     
     def state2idx(self, state):
         x, y = state
@@ -23,7 +24,7 @@ class GridWorldEnv(RL_ENV):
     
     def dist_func(self, state):
         td = 0
-        for gs in self.goal_state:
+        for gs in self.T:
             td += (state[0] - gs[0]) ** 2 + (state[1] - gs[1]) ** 2
         return td
         
@@ -37,19 +38,20 @@ class GridWorldEnv(RL_ENV):
             x = max(0, x - 1)
         elif action == 'right':
             x = min(self.grid_size[0] - 1, x + 1)
+        if (x, y) in self.walls: return state
         return (x, y)
     
     def reward(self, state, action, next_state=None):
         if next_state is None:
             next_state = self.transition_state(state, action)
-        reward = -5 + 4 * (self.dist_func(state) - self.dist_func(next_state))  # Penalty for each move
+        reward = 10 if self.dist_func(state) > self.dist_func(next_state) else -20  # Penalty for each move
         # print(reward)
-        if next_state in self.goal_state:
-            reward += 120  # Reward for reaching the goal
+        if next_state in self.T:
+            reward += 100  # Reward for reaching the goal
         elif next_state in self.damps:
-            reward -= 60
-        elif next_state in self.walls or state == next_state:
-            reward -= 100 
+            reward -= 40
+        elif state == next_state:
+            reward -= 80 
         return reward
 
     
@@ -66,7 +68,7 @@ class GridWorldEnv(RL_ENV):
                 else:
                     ax.add_patch(plt.Rectangle((x, y), 1, 1, edgecolor='black', fill=False))
                 
-                if (x, y) in self.goal_state:
+                if (x, y) in self.T:
                     ax.text(x + 0.5, y + 0.5, 'G', va='center', ha='center', fontsize=12, color='green')  # Goal state
 
                 if agent_state and (x, y) == agent_state:
@@ -74,7 +76,10 @@ class GridWorldEnv(RL_ENV):
 
         # Plot the policy arrows
         if policy:
-            for state, action in policy.items():
+            for state in self.S:
+                if state in self.IAS:
+                    continue
+                action = policy.get(state)
                 x, y = state
                 x_plot = x + 0.5
                 y_plot = y + 0.5
